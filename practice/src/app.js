@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.route.js";
+import userRouter from "./routes/user.route.js";
 
 dotenv.config();
 
@@ -30,6 +31,6 @@ app.get("/", (req, res) => {
   });
 })
 app.use("/auth", authRouter)
-app.use("/user", authRouter)
+app.use("/user", userRouter)
 
 export { app };

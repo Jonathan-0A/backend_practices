@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandller.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
     const { name, username, email, password, mobileNo } = req.body;
@@ -10,7 +10,7 @@ export const registerUser = asyncHandler(async (req, res) => {
             new ApiResponse(400, "All fields are required!")
         );
     }
-    const userExist = await User.findOne({ $or: [{ email }, { username }] });
+    const userExist = await User.findOne({ $or: [{ email }, { username: username.toLowerCase() }] });
     if (userExist) {
         return res.status(400).json(
             new ApiResponse(400, "User with this email or username already exists!")
@@ -19,12 +19,22 @@ export const registerUser = asyncHandler(async (req, res) => {
     let avatarImage = "";
     let coverImage = "";
     if (req.files?.avatarImage?.[0]?.path) {
-        const avatarPath = req.files.avatarImage[0].path;
-        avatarImage = await upload(avatarPath) || "";
+        try {
+            const avatarImgPath = req.files.avatarImage[0].path;
+            avatarImage = await uploadOnCloudinary(avatarImgPath) || "";
+        } catch (err) {
+            console.log("Error to upload: ", err);
+            throw new ApiError(500, "Failed to upload avatar image!", err);
+        }
     }
     if (req.files?.coverImage?.[0]?.path) {
-        const coverImgPath = req.files.coverImage[0].path;
-        coverImage = await upload(coverImgPath) || "";
+        try {
+            const coverImgPath = req.files.coverImage[0].path;
+            coverImage = await uploadOnCloudinary(coverImgPath) || "";
+        } catch (err) {
+            console.log("Error to upload: ", err);  
+            throw new ApiError(500, "Failed to upload avatar image!", err);            
+        }
     }
     const user = await User.create({
         name,
@@ -37,18 +47,14 @@ export const registerUser = asyncHandler(async (req, res) => {
     });
     const createdUser = await User.findById(user._id).select("-password -refreshToken");
     if (!createdUser) {
-        return res.status(500).json(
-            new ApiResponse(500, "Failed to register this user!")
-        );
+        throw new ApiError(500, "Failed to register this user!");
     }
 
     return res.status(201).json(
-        new ApiResponse(201, createdUser, "User registered successfully")
+        new ApiResponse(201, "User registered successfully", createdUser)
     );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-    return res.status(200).json({
-        message: "ok"
-    })
+    
 })
