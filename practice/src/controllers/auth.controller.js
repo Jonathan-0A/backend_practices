@@ -3,6 +3,10 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+const options = {
+    httpOnly: true,
+    secure: true,
+}
 export const registerUser = asyncHandler(async (req, res) => {
     const { name, username, email, password, mobileNo } = req.body;
     if ([name, username, email, password, mobileNo].some(e => !e?.trim())) {
@@ -18,7 +22,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     }
     let avatarImage = "";
     let coverImage = "";
-    if (req.files?.avatarImage?.[0]?.path) {
+    if (req.files && Array.isArray(req.files.avatarImage) && req.files.avatarImage.length > 0) {
         try {
             const avatarImgPath = req.files.avatarImage[0].path;
             avatarImage = await uploadOnCloudinary(avatarImgPath) || "";
@@ -27,7 +31,7 @@ export const registerUser = asyncHandler(async (req, res) => {
             throw new ApiError(500, "Failed to upload avatar image!", err);
         }
     }
-    if (req.files?.coverImage?.[0]?.path) {
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImagge.length > 0) {
         try {
             const coverImgPath = req.files.coverImage[0].path;
             coverImage = await uploadOnCloudinary(coverImgPath) || "";
@@ -54,7 +58,6 @@ export const registerUser = asyncHandler(async (req, res) => {
         new ApiResponse(201, "User registered successfully", createdUser)
     );
 });
-
 export const loginUser = asyncHandler(async (req, res) => {
     
 })

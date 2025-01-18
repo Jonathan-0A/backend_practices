@@ -1,0 +1,6 @@
+user login steps :-
+1. req.body -> data
+2. username or email
+3. find user
+4. password check
+5. send response and tokens to cookie
