@@ -1,59 +1,117 @@
-import { google } from "googleapis";
 import dotenv from "dotenv";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { parseGoogleSheetsData, initializeGoogleSheets, syncMongoToSheets } from "../../utils/googleSheetsUtils.js";
+import { renameFields, getHeaders, getPaginatedRows } from "../../utils/services.js";
 
 dotenv.config();
 
-export const getMember = async (req, res) => {
+const SPREADSHEET_ID = process.env.MEMBER_SHEET_ID || "1_WI_q_W2CGf9Ep2AK6MpBfURURS3o_c5NxWljZBuKhQ";
+const DEFAULT_PAGE_SIZE = parseInt(process.env.PAGE_SIZE || "50", 10); // Default page size for pagination
+if (!SPREADSHEET_ID) {
+    throw new Error("Spreadsheet ID is missing. Please configure it in the environment variables.");
+}
+
+// Fetch total members count
+export const getMembersLength = asyncHandler(async (_, res) => {
     try {
-        // Set up Google Sheets API authentication
-        const auth = new google.auth.GoogleAuth({
-            keyFile: "credentials.json", // Path to your service account JSON file
-            scopes: "https://www.googleapis.com/auth/spreadsheets", // Required scope
-        });
-
-        const client = await auth.getClient(); // Get authenticated client
-        const googleSheets = google.sheets({ version: "v4", auth: client });
-
-        // Specify spreadsheet ID
-        const spreadsheetId = process.env.MEMBER_SHEET_ID || "1_WI_q_W2CGf9Ep2AK6MpBfURURS3o_c5NxWljZBuKhQ";
-
-        // Fetch the header row (first row of the sheet)
-        const headerResponse = await googleSheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: "infoDatabase!A1:Z1", // Fetch only the header row
-        });
-        const headers = headerResponse.data.values[0]; // Extract the headers
-
-        // Fetch the data rows (starting from the second row)
-        const dataResponse = await googleSheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: "infoDatabase!A2:Z", // Fetch the data rows
-        });
-        const rows = dataResponse.data.values || [];
-
-        // Format the data into an array of objects
-        const formattedData = rows.map((row) => {
-            const rowObject = {};
-            headers.forEach((header, index) => {
-                // Transform the header to lowercase and replace spaces with underscores
-                const formattedHeader = header.split(" ").join("_").toLowerCase();
-                // Assign the value to the formatted header, or null if undefined
-                rowObject[formattedHeader] = row[index] ? row[index].toLowerCase() : null;
-            });
-            return rowObject;
-        });        
-
-        // Respond with the formatted data
-        res.status(200).json({
-            // status: "success",
-            message: "Data retrieved successfully",
-            data: formattedData,
+        const googleSheets = await initializeGoogleSheets();
+        const rows = await getPaginatedRows(googleSheets, SPREADSHEET_ID, 2, DEFAULT_PAGE_SIZE); // Start from the second row
+        return res.status(200).json({
+            message: "Total members retrieved successfully.",
+            data: rows.length,
         });
     } catch (error) {
-        console.error("Error fetching Google Sheets data:", error.stack);
-        res.status(500).json({
-            message: "An error occurred while fetching the data.",
+        console.error("Error fetching members count:", error.message);
+        return res.status(500).json({
+            message: "Failed to retrieve the total number of members.",
             error: error.message,
         });
     }
-};
+});
+// Fetch member by name
+export const getMemberByName = asyncHandler(async (req, res) => {
+    try {
+        const { name } = req.params;
+        if (!name) {
+            return res.status(400).json({ message: "The 'name' parameter is required." });
+        }
+        const googleSheets = await initializeGoogleSheets();
+        const headers = await getHeaders(googleSheets, SPREADSHEET_ID);
+        let startRow = 2; // Start after the header row
+        let member = null;
+        // Loop through paginated rows until a match is found
+        while (!member) {
+            const rows = await getPaginatedRows(googleSheets, SPREADSHEET_ID, startRow, DEFAULT_PAGE_SIZE);
+            if (rows.length === 0) break; // Exit if no rows are left
+            member = parseGoogleSheetsData(headers, rows).find((rowObject) =>
+                rowObject.name?.toLowerCase().includes(name.toLowerCase())
+            );
+            startRow += DEFAULT_PAGE_SIZE; // Move to the next chunk
+        }
+        if (!member) {
+            return res.status(404).json({ message: `No member found with the name '${name}'.` });
+        }
+
+        return res.status(200).json({
+            message: "Member retrieved successfully.",
+            data: renameFields(member),
+        });
+    } catch (error) {
+        console.error("Error fetching member by name:", error.message);
+        return res.status(500).json({
+            message: "Failed to retrieve member by name.",
+            error: error.message,
+        });
+    }
+});
+// Fetch member by ID
+export const getMemberById = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "The 'id' parameter is required." });
+        }
+        const googleSheets = await initializeGoogleSheets();
+        const headers = await getHeaders(googleSheets, SPREADSHEET_ID);
+        let startRow = 2; // Start after the header row
+        let member = null;
+        // Loop through paginated rows until a match is found
+        while (!member) {
+            const rows = await getPaginatedRows(googleSheets, SPREADSHEET_ID, startRow, DEFAULT_PAGE_SIZE);
+            if (rows.length === 0) break; // Exit if no rows are left
+            member = parseGoogleSheetsData(headers, rows).find((rowObject) => rowObject.serial_id === id);
+            startRow += DEFAULT_PAGE_SIZE; // Move to the next chunk
+        }
+        if (!member) {
+            return res.status(404).json({ message: `No member found with the ID '${id}'.` });
+        }
+
+        return res.status(200).json({
+            message: "Member retrieved successfully.",
+            data: renameFields(member),
+        });
+    } catch (error) {
+        console.error("Error fetching member by ID:", error.message);
+        return res.status(500).json({
+            message: "Failed to retrieve member by ID.",
+            error: error.message,
+        });
+    }
+});
+export const addMember = asyncHandler(async (req, res) => {
+    try {
+        const newMember = new Member(req.body);
+        await newMember.save();
+        console.log("New member added to MongoDB.");
+        // Trigger sync
+        await syncMongoToSheets(SPREADSHEET_ID);
+
+        res.status(201).json({ message: "Member added and synced successfully." });
+    } catch (error) {
+        console.error("Error adding member:", error.message);
+        return res.status(500).json({
+            message: "Failed to add member.",
+            error: error.message,
+        });
+    }
+});
