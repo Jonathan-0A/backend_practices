@@ -11,7 +11,7 @@ app.use(cors({
     credentials: true,
 }));
 app.use(cookieParser());
-app.use(express.json({limit: "17kb"}));
+app.use(express.json());
 app.use(express.urlencoded({extended: true, limit: "17kb"}));
 app.use(express.static("public"));
 
@@ -25,5 +25,14 @@ app.get("/", (req, res) => {
     });
 });
 app.use("/data", dataRouter);
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+        message: err.message || "Internal Server Error",
+        error: process.env.NODE_ENV === 'development' ? err : {},
+    });
+});
 
 export default app;
