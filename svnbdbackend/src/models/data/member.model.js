@@ -36,12 +36,12 @@ const memberSchema = new Schema({
     },
     pan: {
         type: String,
-        default: 0
+        default: "0"
     },
     dp_status: {
         type: String,
         default: "FW Pending",
-        enum: ["FW Pending", "FW Completed", "DA Pending", "DA Approved", "DA Rejected", "SU Pending", "SU Approved", "SU Rejected"]
+        enum: ["FW Pending", "FW Completed", "DA Pending", "DA Approved", "DA Rejected", "SU Approved", "SU Rejected"]
     },
     dikshyarti: {
         type: String,
@@ -55,7 +55,6 @@ const memberSchema = new Schema({
     },
     initiation_date: {
         type: Date,
-        default: 0
     }
 }, { timestamps: true });
 
