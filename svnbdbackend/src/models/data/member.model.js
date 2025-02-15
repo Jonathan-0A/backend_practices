@@ -4,27 +4,31 @@ const memberSchema = new Schema({
     serial_id: {
         type: Number,
         required: true,
-        unique: true
+        unique: true,
     },
     dp_serial: {
         type: Number,
-        default: null
+        default: 0
     },
     fc_no: {
         type: String,
-        required: true
+        required: true,
     },
     name: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true
     },
     rittwik: {
         type: String,
-        default: 0
+        default: null,
+        lowercase: true
     },
     address: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true,
+        default: null
     },
     phone: {
         type: Number,
@@ -36,7 +40,8 @@ const memberSchema = new Schema({
     },
     pan: {
         type: String,
-        default: "0"
+        default: "0",
+        lowercase: true
     },
     dp_status: {
         type: String,

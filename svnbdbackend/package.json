@@ -1,6 +1,6 @@
 {
   "name": "svnbdbackend",
-  "version": "2.5.1",
+  "version": "2.7.3",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "server": "nodemon src/index.js",
     "sync-deposits": "nodemon src/sync/deposit.sync.js",
     "sync-members": "nodemon src/sync/member.sync.js",
+    "sync-istavritys": "nodemon src/sync/istavrity.sync.js",
     "test": "node src/test.js"
   },
   "author": "Arpan Ghosh",

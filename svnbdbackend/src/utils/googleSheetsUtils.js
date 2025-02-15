@@ -1,6 +1,20 @@
 import { google } from 'googleapis';
 import { renameFields } from './services.js';
 
+const getSheetIdByName = async (googleSheets, spreadsheetId, sheetName) => {
+    try {
+        const response = await googleSheets.spreadsheets.get({ spreadsheetId });
+        const sheet = response.data.sheets.find(s => s.properties.title === sheetName);
+        if (!sheet) {
+            throw new Error(`Sheet with name "${sheetName}" not found.`);
+        }
+        return sheet.properties.sheetId;  // This is the numeric sheet ID
+    } catch (err) {
+        console.error(`Error fetching Sheet ID: ${err.message}`);
+        throw new Error("Failed to retrieve Sheet ID.");
+    }
+};
+
 /**
  * Initializes the Google Sheets client and ensures the token is refreshed when needed.
  * @returns {Object} - The initialized Google Sheets client.
@@ -138,23 +152,23 @@ export const deleteMemberInSheet = async (googleSheets, spreadsheetId, sheetName
             throw new Error("No data found in the Google Sheet.");
         }
         const rows = response.data.values;
-        const headerRow = renameFields(rows[0]);  // Header row (column names)
+        const headerRow = renameFields(rows[0]);
         const serialIdIndex = headerRow.indexOf("serial_id");
         if (serialIdIndex === -1) {
             throw new Error("Column 'serial_id' not found in Google Sheet.");
         }
-        console.log("Sheet Serial IDs:", rows.slice(1).map(row => row[serialIdIndex]));
         let rowIndex = -1;
         for (let i = 1; i < rows.length; i++) { // Start from 1 to skip headers
             if (rows[i][serialIdIndex] !== undefined && String(rows[i][serialIdIndex]).trim() === String(serial_id).trim()) {
-                rowIndex = i; // 0-based index (for batchUpdate)
+                rowIndex = i; 
                 break;
             }
         }
-        // console.log("rowIndex:", rowIndex);
         if (rowIndex === -1) {
             throw new Error(`No matching row found for serial_id: ${serial_id}`);
         }
+        // ✅ Fetch the correct numeric sheetId
+        const sheetId = await getSheetIdByName(googleSheets, spreadsheetId, sheetName);
         // Delete row using batchUpdate API
         await googleSheets.spreadsheets.batchUpdate({
             spreadsheetId,
@@ -163,9 +177,9 @@ export const deleteMemberInSheet = async (googleSheets, spreadsheetId, sheetName
                     {
                         deleteDimension: {
                             range: {
-                                sheetId: spreadsheetId, // Sheet ID (NOT name) may be required; fetch it if needed
+                                sheetId: sheetId, // ✅ Use numeric sheetId here
                                 dimension: "ROWS",
-                                startIndex: rowIndex, // 0-based index
+                                startIndex: rowIndex, 
                                 endIndex: rowIndex + 1
                             }
                         }
@@ -173,9 +187,22 @@ export const deleteMemberInSheet = async (googleSheets, spreadsheetId, sheetName
                 ]
             }
         });
+
         console.log(`Member with Serial ID '${serial_id}' deleted successfully.`);
     } catch (err) {
         console.error("Error deleting member from Google Sheets:", err.message);
         throw new Error("Failed to delete member from Google Sheets: " + err.message);
+    }
+};
+export const getTotalDataLength = async (googleSheets, spreadsheetId, sheetName) => {
+    try {
+        const response = await googleSheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: `${sheetName}!A:A`,
+        });
+        return response.data.values ? response.data.values.length : 0;
+    } catch (error) {
+        console.error("Error fetching total data length:", error);
+        throw new Error("Failed to retrieve total data length.");
     }
 };

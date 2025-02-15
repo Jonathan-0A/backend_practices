@@ -6,6 +6,42 @@ export const getAllData = async (googleSheets, sheetId, sheetName = "infoDatabas
     });
     return response.data.values || [];
 };
+export const depositMapper = (dataArray) => {
+    return dataArray.map((data) => {
+        return [
+            parseInt(data.serial_id, 10) || 0,
+            data.name ? data.name.toUpperCase() : "",
+            data.address ? data.address.toUpperCase() : "",
+            data.phone ? parseInt(data.phone) : 0,
+            data.fc_no ? `'${data.fc_no}` : "",
+            data.pan ? data.pan.toUpperCase() : "0",
+            parseInt(data.amount) || 0,
+            data.createdAt
+                ? new Date(data.createdAt)
+                : (new Date().toISOString().split('T')[0] || "0"),
+            data.updatedAt
+                ? new Date(data.updatedAt)
+                : (new Date().toISOString().split('T')[0] || "0"),
+        ];
+    });
+};
+export const exportMapper = (dataArray) => {
+    return dataArray.map((data) => {
+        return [
+            Number(data.serial_id) || 0,
+            data.name ? data.name.toUpperCase() : "",
+            data.address ? data.address.toUpperCase() : "",
+            data.phone ? Number(data.phone) : 0,
+            data.fc_no ? `'${data.fc_no}` : "",
+            data.pan ? data.pan.toUpperCase() : "0",
+            Number(data.amount) || 0,
+            data.createdAt
+                ? new Date(data.createdAt)
+                : (new Date().toISOString().split('T')[0] || "0"),
+            data.user ? data.user.toUpperCase() : "USER",
+        ];
+    });
+};
 export const memberMapper = (dataArray) => {
     return dataArray.map((data) => {
         return [

@@ -1,6 +1,11 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import Member from "../../models/data/member.model.js";
-import { addToSheet, initializeGoogleSheets, updateMemberInSheet, deleteMemberInSheet } from "../../utils/googleSheetsUtils.js";
+import {
+    addToSheet,
+    initializeGoogleSheets,
+    updateMemberInSheet,
+    deleteMemberInSheet,
+} from "../../utils/googleSheetsUtils.js";
 import {
     memberMapper,
     sanitizeData,
@@ -115,12 +120,11 @@ export const addMember = asyncHandler(async (req, res) => {
             console.log(sanitizedData);
             await addToSheet(googleSheets, SPREADSHEET_ID, "infoDatabase", sanitizedData[0]);
             console.log("Member added to Google Sheets.");
-
-        } catch (googleSheetsError) {
-            console.error("Error adding member to Google Sheets:", googleSheetsError.message);
+        } catch (gsError) {
+            console.error("Error adding member to Google Sheets:", gsError.message);
             return res.status(500).json({
                 message: "Member added to MongoDB, but failed to add to Google Sheets.",
-                error: googleSheetsError.message,
+                error: gsError.message,
             });
         }
         return res.status(201).json({
@@ -162,28 +166,28 @@ export const updateMember = asyncHandler(async (req, res) => {
 });
 // // Delete member
 export const deleteMember = asyncHandler(async (req, res) => {
-    const {id} = req.params;
-    if(!id) {
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ message: "The 'id' parameter is required." });
     }
     try {
         const member = await Member.findOneAndDelete({ serial_id: id });
-        if(!member) {
+        if (!member) {
             return res.status(404).json({ message: "Member not found." });
         }
         const googleSheets = await initializeGoogleSheets();
         try {
             await deleteMemberInSheet(googleSheets, SPREADSHEET_ID, "infoDatabase", id);
-            
+
             return res.status(200).json({ message: "Member deleted successfully." });
-        } catch(e) {
+        } catch (e) {
             console.error("Error deleting member from Google Sheets:", e.message);
             return res.status(500).json({
                 message: "Member deleted from MongoDB, but failed to delete from Google Sheets.",
                 error: e.message,
             });
         }
-    } catch(err) {
+    } catch (err) {
         console.error("Error deleting member:", err.message);
         return res.status(500).json({
             message: "Failed to delete member.",

@@ -30,7 +30,7 @@ import app from "../app.js";
 
 const connectDB = async () => {
     try {
-        const connectionInstance = await mongoose.connect(process.env.MONGODB_URI);
+        const connectionInstance = await mongoose.connect(process.env.MONGODB_URI_SVNBD);
         console.log(`\nConnected to MongoDB || DB Host: ${connectionInstance.connection.host}`);
         app.on("error", (err) => {
             console.error("\nMongoDB Application Error: ", err);

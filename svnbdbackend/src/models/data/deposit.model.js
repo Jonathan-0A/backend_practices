@@ -4,26 +4,31 @@ const depositSchema = new Schema({
     serial_id: {
         type: Number,
         required: true,
-        unique: true
+        unique: true,
+        lowercase: true
     },
     name: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true
     },
     address: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true
     },
     phone: {
         type: Number,
     },
     fc_no: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true
     },
     pan: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true
     },
     amount: {
         type: Number,
