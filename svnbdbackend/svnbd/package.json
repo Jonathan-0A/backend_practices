@@ -1,0 +1,29 @@
+{
+  "name": "svnbd",
+  "version": "1.0.0",
+  "description": "SVNBD Microservice",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "sync-deposits": "nodemon src/sync/deposit.sync.js",
+    "sync-members": "nodemon src/sync/member.sync.js",
+    "sync-istavritys": "nodemon src/sync/istavrity.sync.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "dotenv": "^8.6.0",
+    "express": "^4.17.1",
+    "googleapis": "^144.0.0",
+    "mongoose": "^5.10.9",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.6"
+  },
+  "author": "Arpan Ghosh",
+  "license": "ISC"
+}

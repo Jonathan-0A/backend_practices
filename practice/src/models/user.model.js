@@ -74,7 +74,7 @@ userSchema.methods.generateAccessToken = function () {
          },
         proccess.env.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: ACCESS_TOKEN_EXPIRY,
+            expiresIn: proccess.env.ACCESS_TOKEN_EXPIRY,
         }
     )
 }
@@ -83,7 +83,7 @@ userSchema.methods.generateRefreshToken = function () {
         { _id: this._id },
         proccess.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: REFRESH_TOKEN_EXPIRY,
+            expiresIn: proccess.env.REFRESH_TOKEN_EXPIRY,
         }
     )
 }
