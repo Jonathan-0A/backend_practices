@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const { Schema, model } = mongoose;
 
-const depositSchema = new Schema({
+const exportedDepositSchema = new Schema({
     serial_id: {
         type: Number,
         required: true,
@@ -32,7 +32,7 @@ const depositSchema = new Schema({
         type: Number,
         required: true,
     },
-    last_deposit: {
+    date: {
         type: Date,
     },
     createdAt: {
@@ -45,6 +45,6 @@ const depositSchema = new Schema({
     },
 });
 
-const Deposit = model('Deposit', depositSchema);
+const exportedDeposit = model('exportedDeposit', exportedDepositSchema);
 
-export default Deposit;
+export default exportedDeposit;

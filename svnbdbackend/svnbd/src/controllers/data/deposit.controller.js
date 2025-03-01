@@ -12,6 +12,7 @@ import {
     sanitizeData,
 } from "../../utils/services.js";
 import Deposit from "../../models/data/deposit.model.js";
+import ExportedDeposit from "../../models/data/exported_deposit.model.js";
 
 const SPREADSHEET_ID = process.env.DEPOSIT_SHEET_ID || "1orzWP59gYcb7yt5mDmHbrUIEQy4GU0ifa5D-doJorfs";
 if (!SPREADSHEET_ID) {
@@ -30,7 +31,18 @@ export const getDepositsLength = asyncHandler(async (_, res) => {
         data: totalCount,
     });
 });
-
+export const getExportedDeposits = asyncHandler(async (req, res) => {
+    const exportedDeposits = await ExportedDeposit.find({}).select("-updatedAt -__v").lean(); // Renamed variable
+    if (!exportedDeposits) {
+        return res.status(404).json({
+            message: "Deposit not found.",
+        });
+    }
+    return res.status(200).json({
+        message: "Exported deposits retrieved successfully.",
+        data: exportedDeposits,
+    });
+});
 export const getDepositByName = asyncHandler(async (req, res) => {
     const { name } = req.params;
     if (!name) {
@@ -174,12 +186,12 @@ export const exportDeposit = asyncHandler(async (req, res) => {
             return res.status(404).json({ message: "Deposit not found in database." });
         }
         // Add to Google Sheets
-        await addToSheet(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit", sanitizedData[0]);
-        console.log("Deposit added to Google Sheets.");
+        // await addToSheet(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit", sanitizedData[0]);
+        // console.log("Deposit added to Google Sheets.");
         // Update member in Google Sheets
-        await updateMemberInSheet(googleSheets, SPREADSHEET_ID, "Deposit", id, {
-            updatedAt: new Date().toISOString().split('T')[0],
-        });
+        // await updateMemberInSheet(googleSheets, SPREADSHEET_ID, "Deposit", id, {
+        //     updatedAt: new Date().toISOString().split('T')[0],
+        // });
 
         return res.status(201).json({
             message: "Deposit exported successfully to Google Sheets.",
