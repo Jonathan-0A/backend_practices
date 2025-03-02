@@ -12,16 +12,27 @@ import {
     sanitizeData,
 } from "../../utils/services.js";
 import Deposit from "../../models/data/deposit.model.js";
-import ExportedDeposit from "../../models/data/exported_deposit.model.js";
+// import ExportedDeposit from "../../models/data/exported_deposit.model.js";
+// import { Pool } from "pg";
+// import dotenv from "dotenv";
+
+// dotenv.config();
 
 const SPREADSHEET_ID = process.env.DEPOSIT_SHEET_ID || "1orzWP59gYcb7yt5mDmHbrUIEQy4GU0ifa5D-doJorfs";
 if (!SPREADSHEET_ID) {
     throw new Error("Spreadsheet ID is missing. Please configure it in the environment variables.");
 }
-const EXPORT_SPREADSHEET_ID = process.env.EXPORT_DEPOSIT_SHEET_ID || "1K6UmJxV1XAi523wb1BPTC5AAzmwJUBP74zf7LGBMgO8";
-if (!EXPORT_SPREADSHEET_ID) {
-    throw new Error("Export Spreadsheet ID is missing. Please configure it in the environment variables.");
-}
+// const EXPORT_SPREADSHEET_ID = process.env.EXPORT_DEPOSIT_SHEET_ID || "1K6UmJxV1XAi523wb1BPTC5AAzmwJUBP74zf7LGBMgO8";
+// if (!EXPORT_SPREADSHEET_ID) {
+//     throw new Error("Export Spreadsheet ID is missing. Please configure it in the environment variables.");
+// }
+// const pool = new Pool({
+//     user: process.env.DB_USER,
+//     host: process.env.DB_HOST,
+//     database: process.env.DB_NAME,
+//     password: process.env.DB_PASSWORD,
+//     port: process.env.DB_PORT,
+// });
 
 // Get total members count
 export const getDepositsLength = asyncHandler(async (_, res) => {
@@ -29,18 +40,6 @@ export const getDepositsLength = asyncHandler(async (_, res) => {
     return res.status(200).json({
         message: "Total deposits retrieved successfully.",
         data: totalCount,
-    });
-});
-export const getExportedDeposits = asyncHandler(async (req, res) => {
-    const exportedDeposits = await ExportedDeposit.find({}).select("-updatedAt -__v").lean(); // Renamed variable
-    if (!exportedDeposits) {
-        return res.status(404).json({
-            message: "Deposit not found.",
-        });
-    }
-    return res.status(200).json({
-        message: "Exported deposits retrieved successfully.",
-        data: exportedDeposits,
     });
 });
 export const getDepositByName = asyncHandler(async (req, res) => {
@@ -161,47 +160,47 @@ export const deleteDeposit = asyncHandler(async (req, res) => {
         });
     }
 });
-export const exportDeposit = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    if (!id) {
-        return res.status(400).json({ message: "The 'id' parameter is required" });
-    }
-    const googleSheets = await initializeGoogleSheets();
-    try {
-        // Get total length for serial ID
-        const len = await getTotalDataLength(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit");
-        req.body.serial_id = Number(len);
-        const deposit = req.body;
-        // Prepare data for export
-        const newRowData = exportMapper([deposit]);
-        const sanitizedData = sanitizeData(newRowData);
-        console.log(sanitizedData);
-        // Update MongoDB record
-        const updatedDeposit = await Deposit.findOneAndUpdate(
-            { serial_id: id },
-            { amount: req.body.amount },
-            { new: false } // Do not return the updated document
-        );
-        if (!updatedDeposit) {
-            return res.status(404).json({ message: "Deposit not found in database." });
-        }
-        // Add to Google Sheets
-        // await addToSheet(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit", sanitizedData[0]);
-        // console.log("Deposit added to Google Sheets.");
-        // Update member in Google Sheets
-        // await updateMemberInSheet(googleSheets, SPREADSHEET_ID, "Deposit", id, {
-        //     updatedAt: new Date().toISOString().split('T')[0],
-        // });
+// export const exportDeposit = asyncHandler(async (req, res) => {
+//     const { id } = req.params;
+//     if (!id) {
+//         return res.status(400).json({ message: "The 'id' parameter is required" });
+//     }
+//     const googleSheets = await initializeGoogleSheets();
+//     try {
+//         // Get total length for serial ID
+//         const len = await getTotalDataLength(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit");
+//         req.body.serial_id = Number(len);
+//         const deposit = req.body;
+//         // Prepare data for export
+//         const newRowData = exportMapper([deposit]);
+//         const sanitizedData = sanitizeData(newRowData);
+//         console.log(sanitizedData);
+//         // Update MongoDB record
+//         const updatedDeposit = await Deposit.findOneAndUpdate(
+//             { serial_id: id },
+//             { amount: req.body.amount },
+//             { new: false } // Do not return the updated document
+//         );
+//         if (!updatedDeposit) {
+//             return res.status(404).json({ message: "Deposit not found in database." });
+//         }
+//         // Add to Google Sheets
+//         // await addToSheet(googleSheets, EXPORT_SPREADSHEET_ID, "exportedDeposit", sanitizedData[0]);
+//         // console.log("Deposit added to Google Sheets.");
+//         // Update member in Google Sheets
+//         // await updateMemberInSheet(googleSheets, SPREADSHEET_ID, "Deposit", id, {
+//         //     updatedAt: new Date().toISOString().split('T')[0],
+//         // });
 
-        return res.status(201).json({
-            message: "Deposit exported successfully to Google Sheets.",
-            data: deposit,
-        });
-    } catch (gsError) {
-        console.error("Error exporting deposit to Google Sheets:", gsError.message);
-        return res.status(500).json({
-            message: "Deposit exported to MongoDB, but failed to export to Google Sheets.",
-            error: gsError.message,
-        });
-    }
-});
+//         return res.status(201).json({
+//             message: "Deposit exported successfully to Google Sheets.",
+//             data: deposit,
+//         });
+//     } catch (gsError) {
+//         console.error("Error exporting deposit to Google Sheets:", gsError.message);
+//         return res.status(500).json({
+//             message: "Deposit exported to MongoDB, but failed to export to Google Sheets.",
+//             error: gsError.message,
+//         });
+//     }
+// });
