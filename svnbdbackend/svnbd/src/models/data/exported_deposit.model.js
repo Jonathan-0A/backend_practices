@@ -2,11 +2,6 @@ import mongoose from 'mongoose';
 const { Schema, model } = mongoose;
 
 const exportedDepositSchema = new Schema({
-    serial_id: {
-        type: Number,
-        required: true,
-        unique: true,
-    },
     name: {
         type: String,
         required: true,
@@ -32,18 +27,11 @@ const exportedDepositSchema = new Schema({
         type: Number,
         required: true,
     },
-    date: {
-        type: Date,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
-    },
-});
+    table: {
+        type: String,
+        required: true,
+    }
+}, { timestamps: true });
 
 const exportedDeposit = model('exportedDeposit', exportedDepositSchema);
 
