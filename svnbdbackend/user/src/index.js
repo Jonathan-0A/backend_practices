@@ -1,10 +1,13 @@
 import connectDB from "./db/connectDB.js";
-import app from "./app.js";
+import server from "./app.js";
+import dotenv from "dotenv";
 
-const PORT = process.env.PORT || 8358;
+dotenv.config();
+
+const PORT = process.env.USER_PORT || 8359;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`\nUser Microservice running on port ${PORT} || [ http://localhost:${PORT} ]\n\n`);
   });
 });

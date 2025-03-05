@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import pg from "pg";
 import dotenv from "dotenv";
@@ -8,17 +7,15 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-    connectionString: `${process.env.DATABASE_URL}?sslmode=require`,
+    connectionString: `${process.env.NEONDB_URL}?sslmode=require`,
     ssl: {
         rejectUnauthorized: false,
     },
 });
-
 const createSchemaIfNotExists = async (schemaName) => {
     const query = `CREATE SCHEMA IF NOT EXISTS ${schemaName}`;
     await pool.query(query);
 };
-
 const createTableIfNotExists = async (schemaName, tableName) => {
     const query = `
         CREATE TABLE IF NOT EXISTS ${schemaName}.${tableName} (
@@ -33,19 +30,13 @@ const createTableIfNotExists = async (schemaName, tableName) => {
     `;
     await pool.query(query);
 };
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI_SVNBD);
-
 export const exportDeposit = asyncHandler(async (req, res) => {
     try {
         const { data, table } = req.body;
         const parsedData = JSON.parse(data); // Parse the raw JSON data
         parsedData.table = table; // Add the table field to the parsed data
-
         // Insert data into MongoDB
         const mongoResult = await ExportedDeposit.create(parsedData);
-
         // Send success response to frontend
         res.status(201).json({
             message: "Deposit exported successfully",
@@ -61,23 +52,19 @@ export const exportDeposit = asyncHandler(async (req, res) => {
         });
     }
 });
-
 const processDepositsInBackground = async () => {
     while (true) {
         const deposit = await ExportedDeposit.findOne();
         if (!deposit) break;
-
         try {
             const { table } = deposit;
             const schemaName = 'monthlyDeposits';
             await createSchemaIfNotExists(schemaName);
             await createTableIfNotExists(schemaName, table);
-
             const query = `
                 INSERT INTO ${schemaName}.${table} (name, address, phone, fc_no, pan, amount)
                 VALUES ($1, $2, $3, $4, $5, $6)
             `;
-
             await pool.query(query, [
                 deposit.name,
                 deposit.address,
@@ -86,7 +73,6 @@ const processDepositsInBackground = async () => {
                 deposit.pan,
                 deposit.amount,
             ]);
-
             // Delete the data from MongoDB after successful insertion into NeonDB
             await ExportedDeposit.deleteOne({ _id: deposit._id });
         } catch (gsError) {
@@ -95,7 +81,6 @@ const processDepositsInBackground = async () => {
         }
     }
 };
-
 export const getExportedDeposits = asyncHandler(async (req, res) => {
     try {
         const { table } = req.params;
@@ -117,7 +102,6 @@ export const getExportedDeposits = asyncHandler(async (req, res) => {
         });
     }
 });
-
 export const getExportedDepositsCount = asyncHandler(async (req, res) => {
     try {
         const { table } = req.params;

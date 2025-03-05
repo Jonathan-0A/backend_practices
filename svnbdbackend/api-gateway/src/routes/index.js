@@ -1,14 +1,15 @@
 import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import proxy from 'express-http-proxy';
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const setupRoutes = (app) => {
-    app.use('/api/svnbd', createProxyMiddleware({
-        target: 'http://localhost:8357',
-        changeOrigin: true,
+    app.use('/api/svnbd', proxy(process.env.SVNBD_SERVICE_URL, {
+        proxyReqPathResolver: (req) => req.originalUrl.replace('/api/svnbd', ''),
     }));
-    app.use('/api/user', createProxyMiddleware({
-        target: 'http://localhost:8359',
-        changeOrigin: true,
+    app.use('/api/user', proxy(process.env.USER_SERVICE_URL, {
+        proxyReqPathResolver: (req) => req.originalUrl.replace('/api/user', ''),
     }));
 };
 

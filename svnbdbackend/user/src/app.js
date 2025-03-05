@@ -4,14 +4,17 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth.route.js";
 import userRouter from "./routes/user.route.js";
+import http from "http";
 
 dotenv.config();
 
 const app = express();
-
 // Allow multiple origins dynamically
-const allowedOrigins = [process.env.CORS_ORIGIN || "*"];
-
+const allowedOrigins = [
+  process.env.FRONTEND_URL, 
+  "http://localhost:5173", 
+  "https://5173-idx-svnbd-1740153114569.cluster-qpa6grkipzc64wfjrbr3hsdma2.cloudworkstations.dev"
+];
 // Middlewares
 app.use(
   cors({
@@ -30,9 +33,11 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "17kb" }));
-
 // Routes
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 
-export default app;
+// Create HTTP server and listen on the specified port
+const server = http.createServer(app);
+
+export default server;
